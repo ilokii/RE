@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25bd7d639f5608f4ba8b0f5d7acd71e6, type: 3}
+  m_Name: Demon
+  m_EditorClassIdentifier: 
+  characterId: Demon
+  displayName: Demon
+  portraits:
+  - emotionName: Normal
+    sprite: {fileID: 21300000, guid: 48448f4e73c75ab4caf664a3b47003b8, type: 3}
+  - emotionName: Happy
+    sprite: {fileID: 21300000, guid: 47e2ea9139f0ad447b9420342c77088a, type: 3}

@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25bd7d639f5608f4ba8b0f5d7acd71e6, type: 3}
+  m_Name: Char2
+  m_EditorClassIdentifier: 
+  characterId: Char2
+  displayName: "\u5973\u4E3B"
+  portraits:
+  - emotionName: Idel
+    sprite: {fileID: 21300000, guid: 68388d8a94b117f4e83ca4ae4eba1047, type: 3}
+  - emotionName: Smile
+    sprite: {fileID: 21300000, guid: 688e5166dc440414d89da6c8b4264dda, type: 3}
+  - emotionName: Happy
+    sprite: {fileID: 21300000, guid: 0ad64d7218d45904597e57da69443697, type: 3}
+  - emotionName: Angry
+    sprite: {fileID: 21300000, guid: f5a1e96678deac440a43148fd2f37b8e, type: 3}
+  - emotionName: Sad
+    sprite: {fileID: 21300000, guid: d9d66c13e545b2148b83fad96a612941, type: 3}
+  - emotionName: Surprise
+    sprite: {fileID: 21300000, guid: d19e57cae5c04c54f84f002e67715ba7, type: 3}
+  - emotionName: Thinking
+    sprite: {fileID: 21300000, guid: 61faa0fe362de044288d08669a90af26, type: 3}
+  - emotionName: Blush
+    sprite: {fileID: 21300000, guid: fde335be01c1eb1419026c7604746cf1, type: 3}
+  - emotionName: Sigh
+    sprite: {fileID: 21300000, guid: e8fb8057446a2f44aab94350033cdda8, type: 3}
+  - emotionName: Pain
+    sprite: {fileID: 21300000, guid: 24213156963e2ee40aa98d96cb5f8890, type: 3}
+  - emotionName: Shadow
+    sprite: {fileID: 21300000, guid: a98cd6e7abcd5624eb370cda43da8e8d, type: 3}
+  - emotionName: Crying
+    sprite: {fileID: 21300000, guid: f7358ba440ab2e14f97ba0907620fb64, type: 3}
+  - emotionName: Wink
+    sprite: {fileID: 21300000, guid: 0d054054a9b407349ad859775193b0f2, type: 3}
+  - emotionName: Fear
+    sprite: {fileID: 21300000, guid: b32cb3ed1bb740d458328a9db7cca8b0, type: 3}
+  - emotionName: Diss
+    sprite: {fileID: 21300000, guid: cc875f35f1587e444ad905e40f4e8304, type: 3}

@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: a79c2d3d8a19ded4691f08efcfb7de18
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - nameText: {instanceID: 0}
+  - contentText: {instanceID: 0}
+  - portraitImage: {instanceID: 0}
+  - backgroundImage: {instanceID: 0}
+  - waitingCursor: {instanceID: 0}
+  - bgmSource: {instanceID: 0}
+  - sfxSource: {instanceID: 0}
+  - typingClip: {instanceID: 0}
+  - choicePanel: {instanceID: 0}
+  - choiceBtnPrefab: {fileID: 4119870907634171713, guid: 7dfd744da60ab864babd5342e912ea32, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
