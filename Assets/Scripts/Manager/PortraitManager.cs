@@ -20,6 +20,14 @@ public class PortraitManager : MonoBehaviour
 
     private float focusScale;
     private float defaultScale;
+    
+    [Header("高亮设置")]
+    public Color activeColor = Color.white;           // 说话角色的颜色 (默认白色，完全显示)
+    public Color inactiveColor = new Color(0.5f, 0.5f, 0.5f, 1f); // 非说话角色的颜色 (灰色)
+    public float colorTransitionDuration = 0.3f;      // 颜色过渡时间
+    
+    // 记录当前正在说话的角色
+    private string currentSpeaker = "";
 
     void Awake()
     {
@@ -109,6 +117,63 @@ public class PortraitManager : MonoBehaviour
 
         // 提到最上层
         charObj.transform.SetAsLastSibling();
+        
+        // 【新增】如果这个角色有对话内容，自动设置为当前说话者
+        // 注意：这个逻辑会在 DialogueManager 调用 UpdatePortrait 时自动触发
+    }
+    
+    // --- 【新增】核心功能 4: 设置当前说话角色 (自动高亮) ---
+    public void SetActiveSpeaker(string charId)
+    {
+        // 如果说话者没有变化，不需要重复处理
+        if (currentSpeaker == charId) return;
+        
+        currentSpeaker = charId;
+        
+        Debug.Log($"[PortraitManager] 设置说话者: {charId}");
+        
+        // 【修复】先停止所有颜色过渡协程，然后再启动新的
+        StopAllCoroutines();
+        
+        // 遍历所有在场角色
+        foreach (var kvp in activeCharacters)
+        {
+            string id = kvp.Key;
+            GameObject obj = kvp.Value;
+            Image img = obj.GetComponent<Image>();
+            
+            if (img != null)
+            {
+                if (id == charId)
+                {
+                    // 说话角色 - 高亮显示
+                    Debug.Log($"[PortraitManager] 高亮角色: {id}");
+                    StartCoroutine(TransitionColor(img, activeColor, colorTransitionDuration));
+                }
+                else
+                {
+                    // 非说话角色 - 变灰
+                    Debug.Log($"[PortraitManager] 变灰角色: {id}");
+                    StartCoroutine(TransitionColor(img, inactiveColor, colorTransitionDuration));
+                }
+            }
+        }
+    }
+    
+    // --- 【新增】辅助协程：平滑颜色过渡 ---
+    IEnumerator TransitionColor(Image target, Color endColor, float duration)
+    {
+        Color startColor = target.color;
+        float elapsed = 0;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / duration);
+            target.color = Color.Lerp(startColor, endColor, t);
+            yield return null;
+        }
+        target.color = endColor;
     }
 
     // --- 核心功能 2: 隐藏角色 ---
@@ -119,6 +184,13 @@ public class PortraitManager : MonoBehaviour
             GameObject obj = activeCharacters[charId];
             activeCharacters.Remove(charId);
             characterPositions.Remove(charId); // 【新增】同时移除位置记录
+            
+            // 如果隐藏的是当前说话者，清空说话者记录
+            if (currentSpeaker == charId)
+            {
+                currentSpeaker = "";
+            }
+            
             Destroy(obj); // 简单粗暴：直接销毁 (进阶可以做淡出)
         }
     }

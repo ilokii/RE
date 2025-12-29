@@ -111,12 +111,12 @@ public class DialogueManager : MonoBehaviour
                     else
                     {
                         int.TryParse(line.position, out posIndex);
-                        // 调用管理器：如果 posIndex 是 -1，你可能需要修改 PortraitManager 让它支持“保持原位”
+                        // 调用管理器：如果 posIndex 是 -1，你可能需要修改 PortraitManager 让它支持"保持原位"
                         // 这里我们假设 CSV 如果填了数字就是移动，没填就是 -1
                         // 但 PortraitManager 需要知道如果不动，就只换表情
                         
                         // 修正逻辑：如果 CSV 没填位置，我们怎么知道他在哪？
-                        // 简单方案：在 Manager 里记录每个人的位置，或者这里只传“有效的位置ID”
+                        // 简单方案：在 Manager 里记录每个人的位置，或者这里只传"有效的位置ID"
                         PortraitManager.Instance.UpdatePortrait(line.charId, line.expression, posIndex);
                     }
                 }
@@ -124,6 +124,12 @@ public class DialogueManager : MonoBehaviour
                 {
                     // 如果位置是空，传一个约定值（比如 -1），让 Manager 保持它当前的位置
                     PortraitManager.Instance.UpdatePortrait(line.charId, line.expression, -1);
+                }
+                
+                // 【新增】设置当前说话角色，自动高亮
+                if (!string.IsNullOrEmpty(line.charId))
+                {
+                    PortraitManager.Instance.SetActiveSpeaker(line.charId);
                 }
 
                 UpdateDialogueUI(line); // 只负责文字显示
