@@ -14,6 +14,9 @@ public class PortraitManager : MonoBehaviour
 
     // 缓存当前屏幕上的角色：Key=CharID, Value=立绘物体
     private Dictionary<string, GameObject> activeCharacters = new Dictionary<string, GameObject>();
+    
+    // 【新增】记录每个角色当前所在的位置索引
+    private Dictionary<string, int> characterPositions = new Dictionary<string, int>();
 
     private float focusScale;
     private float defaultScale;
@@ -29,13 +32,17 @@ public class PortraitManager : MonoBehaviour
     {
         // 1. 先确定目标坐标 (targetCoord)
         // 默认放到中间 (Pos_2)，防止后面报错
-        Vector2 targetCoord = positionAnchors[2].anchoredPosition; 
+        Vector2 targetCoord = positionAnchors[2].anchoredPosition;
         bool keepCurrentPos = (targetPosIndex == -1); // 标记：是否保持原位
+        
+        // 【新增】记录实际使用的位置索引
+        int actualPosIndex = 2; // 默认中间位置
 
         // 如果传入了有效的座位号 (0~4)，就用座位的坐标
         if (targetPosIndex >= 0 && targetPosIndex < positionAnchors.Length)
         {
             targetCoord = positionAnchors[targetPosIndex].anchoredPosition;
+            actualPosIndex = targetPosIndex;
         }
 
         GameObject charObj = null;
@@ -51,6 +58,16 @@ public class PortraitManager : MonoBehaviour
             if (keepCurrentPos)
             {
                 targetCoord = rt.anchoredPosition;
+                // 保持原有位置索引
+                if (characterPositions.ContainsKey(charId))
+                {
+                    actualPosIndex = characterPositions[charId];
+                }
+            }
+            else
+            {
+                // 【新增】更新位置记录
+                characterPositions[charId] = actualPosIndex;
             }
 
             // 执行移动
@@ -76,6 +93,8 @@ public class PortraitManager : MonoBehaviour
             //rt.localScale = Vector3.one;
 
             activeCharacters.Add(charId, charObj);
+            // 【新增】记录新角色的位置
+            characterPositions[charId] = actualPosIndex;
         }
 
         // 3. 切换表情
@@ -99,28 +118,81 @@ public class PortraitManager : MonoBehaviour
         {
             GameObject obj = activeCharacters[charId];
             activeCharacters.Remove(charId);
+            characterPositions.Remove(charId); // 【新增】同时移除位置记录
             Destroy(obj); // 简单粗暴：直接销毁 (进阶可以做淡出)
         }
     }
 
-    // --- 核心功能 3: 聚焦/缩放 (CMD_FOCUS) ---
+    // --- 核心功能 3: 聚焦/缩放 (CMD_FOCUS) - 通过角色ID控制 ---
+    public void SetFocusByCharacter(string charId, bool isFocus)
+    {
+        // 检查角色是否存在
+        if (!activeCharacters.ContainsKey(charId))
+        {
+            Debug.LogWarning($"[PortraitManager] SetFocusByCharacter: 角色 '{charId}' 不在场上");
+            return;
+        }
+
+        GameObject charObj = activeCharacters[charId];
+        RectTransform rt = charObj.GetComponent<RectTransform>();
+        
+        // 停止该物体上可能正在运行的缩放协程
+        MonoBehaviour[] components = charObj.GetComponents<MonoBehaviour>();
+        foreach (var comp in components)
+        {
+            if (comp != null) comp.StopAllCoroutines();
+        }
+        
+        if (isFocus)
+        {
+            StartCoroutine(ScaleTo(rt, focusScale, 0.3f)); // 0.3秒缩放
+            Debug.Log($"[PortraitManager] 聚焦角色 {charId}");
+        }
+        else
+        {
+            StartCoroutine(ScaleTo(rt, defaultScale, 0.3f)); // 0.3秒缩放
+            Debug.Log($"[PortraitManager] 取消聚焦角色 {charId}");
+        }
+    }
+    
+    // --- 【保留】通过位置索引聚焦 (向后兼容) ---
     public void SetFocus(int posIndex, bool isFocus)
     {
-        // 这种设计是基于“位置”缩放：让站在 Pos_X 的人变大
-        // 遍历所有角色，看谁站在这个位置附近 (模糊匹配)
-        Vector2 targetCoord = positionAnchors[posIndex].anchoredPosition;
-
-        foreach (var kvp in activeCharacters)
+        // 【修复】使用位置记录字典来精确匹配，而不是坐标比较
+        if (posIndex < 0 || posIndex >= positionAnchors.Length)
         {
-            RectTransform rt = kvp.Value.GetComponent<RectTransform>();
-            // 如果立绘的 X 坐标和目标锚点接近
-            if (Mathf.Abs(rt.anchoredPosition.x - targetCoord.x) < 1.0f)
+            Debug.LogWarning($"[PortraitManager] SetFocus: 无效的位置索引 {posIndex}");
+            return;
+        }
+
+        foreach (var kvp in characterPositions)
+        {
+            string charId = kvp.Key;
+            int charPosIndex = kvp.Value;
+            
+            // 如果这个角色在目标位置上
+            if (charPosIndex == posIndex && activeCharacters.ContainsKey(charId))
             {
-                StopAllCoroutinesOn(kvp.Value);
-                if(isFocus)
+                GameObject charObj = activeCharacters[charId];
+                RectTransform rt = charObj.GetComponent<RectTransform>();
+                
+                // 停止该物体上可能正在运行的缩放协程
+                MonoBehaviour[] components = charObj.GetComponents<MonoBehaviour>();
+                foreach (var comp in components)
+                {
+                    if (comp != null) comp.StopAllCoroutines();
+                }
+                
+                if (isFocus)
+                {
                     StartCoroutine(ScaleTo(rt, focusScale, 0.3f)); // 0.3秒缩放
+                    Debug.Log($"[PortraitManager] 聚焦角色 {charId} 在位置 {posIndex}");
+                }
                 else
+                {
                     StartCoroutine(ScaleTo(rt, defaultScale, 0.3f)); // 0.3秒缩放
+                    Debug.Log($"[PortraitManager] 取消聚焦角色 {charId} 在位置 {posIndex}");
+                }
             }
         }
     }

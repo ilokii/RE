@@ -152,14 +152,21 @@ public class DialogueManager : MonoBehaviour
                 break;
 
             case DialogueType.CMD_FOCUS:
-                int focusPos = int.Parse(line.position);
-                string focusScale = line.content;
-                bool isFocus;
-                if(focusScale == "TRUE")
-                    isFocus = true;
-                else
-                    isFocus = false;
-                PortraitManager.Instance.SetFocus(focusPos, isFocus);
+                // 【改进】通过 CharID 精确控制聚焦
+                if (string.IsNullOrEmpty(line.charId))
+                {
+                    Debug.LogError($"[DialogueManager] CMD_FOCUS 缺少角色ID (CharID列为空) at ID {line.id}");
+                    currentIndex++;
+                    ProcessCurrentLine();
+                    break;
+                }
+                
+                // Content 列决定是聚焦还是取消聚焦
+                string focusCommand = line.content?.Trim().ToUpper() ?? "";
+                bool isFocus = (focusCommand == "TRUE" || focusCommand == "1" || focusCommand == "ON");
+                
+                Debug.Log($"[DialogueManager] 执行 CMD_FOCUS: 角色={line.charId}, 聚焦={isFocus}");
+                PortraitManager.Instance.SetFocusByCharacter(line.charId, isFocus);
                 
                 // 【自动跳过】不等待点击，直接下一句
                 currentIndex++;
