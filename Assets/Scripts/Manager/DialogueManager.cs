@@ -4,7 +4,7 @@ using TMPro;
 using System.Collections;
 using System.Collections.Generic;
 
-public class DialogueManager : MonoBehaviour
+public partial class DialogueManager : MonoBehaviour
 {
     [Header("UI 组件")]
     public TextMeshProUGUI nameText;
@@ -28,26 +28,83 @@ public class DialogueManager : MonoBehaviour
     private List<DialogueLine> currentLines = new List<DialogueLine>();
     private Dictionary<int, int> idToIndexMap = new Dictionary<int, int>();
     private int currentIndex = 0;
+    private string currentScriptName = ""; // 【新增】当前脚本名称（用于存档）
     
     // 状态控制
-    private bool isWaitingForChoice = false; 
+    private bool isWaitingForChoice = false;
     private bool isTyping = false;           // 【新增】是否正在打字中
+    private bool isControlledByGameFlow = false; // 【新增】是否由 GameFlowController 控制
 
     // 协程引用 (用于强行停止打字)
     private Coroutine typingCoroutine;
+
+    // 【新增】缓存InGameMenuController引用，避免每帧查找
+    private InGameMenuController cachedMenuController;
 
     void Start()
     {
         // 初始隐藏光标
         if (waitingCursor) waitingCursor.SetActive(false);
-        LoadScript(startScript);
+        
+        // 注册到 SaveManager
+        SaveManager.Instance.RegisterSavable(this);
+        
+        // 【修改】不再自动加载脚本，改由 GameFlowController 控制
+        // 如果没有被 GameFlowController 控制（例如直接测试这个场景），则使用默认脚本
+        // 延迟一帧检查，给 GameFlowController 时间设置标志
+        StartCoroutine(DelayedAutoStart());
+    }
+    
+    /// <summary>
+    /// 延迟自动启动（如果没有被 GameFlowController 控制）
+    /// </summary>
+    private System.Collections.IEnumerator DelayedAutoStart()
+    {
+        yield return null; // 等待一帧
+        
+        if (!isControlledByGameFlow)
+        {
+            Debug.LogWarning("[DialogueManager] 未被 GameFlowController 控制，使用默认脚本启动");
+            LoadScript(startScript);
+        }
+    }
+    
+    /// <summary>
+    /// 设置为由 GameFlowController 控制
+    /// 此方法应由 GameFlowController 在加载脚本前调用
+    /// </summary>
+    public void SetControlledByGameFlow(bool controlled)
+    {
+        isControlledByGameFlow = controlled;
     }
 
     void Update()
     {
+        // 【优化】缓存InGameMenuController引用，避免每帧查找
+        if (cachedMenuController == null)
+        {
+            cachedMenuController = FindObjectOfType<InGameMenuController>();
+        }
+
+        // 【修复】检查游戏内菜单是否打开
+        if (cachedMenuController != null && cachedMenuController.IsMenuOpen())
+        {
+            return; // 菜单打开时不处理对话输入
+        }
+
         // 只有在非选项状态下才响应点击
         if (!isWaitingForChoice && Input.GetMouseButtonDown(0))
         {
+            // 【修复】检查是否点击在可交互UI上（如按钮）
+            // 使用更精确的检测：只有点击到Button等可交互组件时才忽略
+            if (IsClickingOnInteractableUI())
+            {
+                Debug.Log("[DialogueManager] 点击在可交互UI上，忽略");
+                return;
+            }
+
+            Debug.Log($"[DialogueManager] 检测到点击: isTyping={isTyping}, currentIndex={currentIndex}/{currentLines.Count}");
+
             if (isTyping)
             {
                 // 【逻辑 A】如果正在打字 -> 立即显示全句 (Skip)
@@ -65,9 +122,40 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 检查是否点击在可交互UI上（如按钮）
+    /// </summary>
+    private bool IsClickingOnInteractableUI()
+    {
+        if (UnityEngine.EventSystems.EventSystem.current == null)
+            return false;
+
+        // 获取当前鼠标下的所有UI对象
+        var pointerEventData = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+        pointerEventData.position = Input.mousePosition;
+
+        var results = new List<UnityEngine.EventSystems.RaycastResult>();
+        UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointerEventData, results);
+
+        // 检查是否点击到Button或其他可交互组件
+        foreach (var result in results)
+        {
+            if (result.gameObject.GetComponent<Button>() != null ||
+                result.gameObject.GetComponent<UnityEngine.UI.Scrollbar>() != null ||
+                result.gameObject.GetComponent<UnityEngine.UI.Slider>() != null ||
+                result.gameObject.GetComponent<UnityEngine.UI.Toggle>() != null)
+            {
+                return true; // 点击在可交互UI上
+            }
+        }
+
+        return false; // 点击在普通UI区域（如对话框背景），允许继续对话
+    }
+
     // --- 核心逻辑 1: 加载剧本 ---
     public void LoadScript(string fileName)
     {
+        currentScriptName = fileName; // 【新增】记录当前脚本名
         currentLines = CSVLoader.Load(fileName);
         idToIndexMap.Clear();
         currentIndex = 0;
@@ -374,7 +462,7 @@ public class DialogueManager : MonoBehaviour
     }
 
     // --- 功能 D: 切换背景 ---
-    void ChangeBackground(string bgName)
+    public void ChangeBackground(string bgName) // 【修改】改为 public，允许外部调用
     {
         // 从 Resources/Backgrounds/ 文件夹加载图片
         Sprite bgSprite = Resources.Load<Sprite>("Backgrounds/" + bgName);
@@ -391,7 +479,7 @@ public class DialogueManager : MonoBehaviour
     }
 
     // --- 功能 E: 切换音乐 ---
-    void PlayBGM(string musicName)
+    public void PlayBGM(string musicName) // 【修改】改为 public，允许外部调用
     {
         // 如果填 "STOP"，则停止音乐
         if (musicName == "STOP")

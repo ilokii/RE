@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class PortraitManager : MonoBehaviour
+public partial class PortraitManager : MonoBehaviour
 {
     public static PortraitManager Instance;
 
@@ -33,6 +33,16 @@ public class PortraitManager : MonoBehaviour
     {
         Instance = this;
         getPortraitPrefabDefaultScale();
+    }
+
+    void Start()
+    {
+        // 注册到SaveManager
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.RegisterSavable(this);
+            Debug.Log("[PortraitManager] 已注册到SaveManager");
+        }
     }
 
     // --- 核心功能 1: 更新立绘状态 ---
